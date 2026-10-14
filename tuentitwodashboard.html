@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퉤니투 워크스페이스</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --bg-sidebar:#FBFBFA;
+    --bg-main:#FFFFFF;
+    --text:#37352F;
+    --text-2:#787774;
+    --text-3:#9B9A97;
+    --border:#E9E9E7;
+    --hover:#EFEFEE;
+    --accent:#2F80ED;
+    --accent-bg:#E7F0FD;
+    --radius:6px;
+
+    --doyeon-bg:#FDECDD; --doyeon-fg:#D9730D;
+    --haram-bg:#F6F3F9;  --haram-fg:#6940A5;
+    --sewon-bg:#E7F3F8;  --sewon-fg:#337EA9;
+    --nakyung-bg:#EDF3EC;--nakyung-fg:#448361;
+    --sohyun-bg:#FAF1F5; --sohyun-fg:#C14C8A;
+
+    --status-todo-bg:#F1F1EF; --status-todo-fg:#787774;
+    --status-doing-bg:#FDF3D8; --status-doing-fg:#B7791F;
+    --status-done-bg:#DDEDEA; --status-done-fg:#2A8C7A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;color:var(--text);background:var(--bg-main);}
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:260px;flex:0 0 260px;background:var(--bg-sidebar);border-right:1px solid var(--border);
+    padding:14px 8px;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;
+  }
+  .ws-title{display:flex;align-items:center;gap:8px;padding:6px 8px 14px 8px;font-weight:700;font-size:15px;}
+  .ws-title .emoji{font-size:18px;}
+  .nav-group{margin-bottom:6px;}
+  .nav-label{font-size:11px;color:var(--text-3);padding:10px 10px 4px 10px;font-weight:600;letter-spacing:.02em;}
+  .nav-item{
+    display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:5px;cursor:pointer;
+    font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .nav-item:hover{background:var(--hover);}
+  .nav-item.active{background:#E9E9E7;font-weight:600;}
+  .nav-item .icon{font-size:15px;width:18px;text-align:center;flex:0 0 18px;}
+  .nav-item .dot{width:9px;height:9px;border-radius:50%;flex:0 0 9px;}
+  .nav-item.member{padding-left:18px;}
+
+  /* ---------- Main ---------- */
+  .content{margin-left:260px;flex:1;min-width:0;}
+  .page{display:none;padding:48px 24px 120px 24px;}
+  .page.active{display:block;}
+  .page-inner{max-width:860px;margin:0 auto;}
+  .page-header{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+  .page-icon{font-size:34px;line-height:1;}
+  .page-title{font-size:30px;font-weight:700;margin:0;}
+  .page-sub{color:var(--text-2);font-size:14px;margin:6px 0 28px 0;}
+  hr.div{border:none;border-top:1px solid var(--border);margin:24px 0;}
+
+  h2.block-title{font-size:19px;font-weight:700;margin:32px 0 10px 0;display:flex;align-items:center;gap:8px;}
+  h3.block-sub{font-size:15px;font-weight:600;margin:20px 0 8px 0;color:var(--text);}
+  p.body-text{font-size:15px;line-height:1.75;color:var(--text);margin:8px 0;}
+
+  /* callout */
+  .callout{display:flex;gap:10px;padding:14px 16px;border-radius:var(--radius);background:#F7F7F5;border:1px solid var(--border);margin:12px 0;}
+  .callout .em{font-size:18px;flex:0 0 auto;}
+  .callout p{margin:0;font-size:14.5px;line-height:1.7;}
+  .callout.blue{background:var(--accent-bg);}
+  .callout.orange{background:var(--doyeon-bg);}
+  .callout.green{background:var(--status-done-bg);}
+
+  /* stat cards */
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 6px 0;}
+  .stat-card{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .stat-num{font-size:26px;font-weight:700;}
+  .stat-label{font-size:12.5px;color:var(--text-2);margin-top:2px;}
+
+  /* generic table */
+  table.ntable{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0;}
+  table.ntable th{text-align:left;color:var(--text-2);font-weight:600;font-size:12.5px;border-bottom:1px solid var(--border);padding:8px 10px;}
+  table.ntable td{border-bottom:1px solid var(--border);padding:9px 10px;vertical-align:middle;}
+  table.ntable tr:hover td{background:var(--hover);}
+
+  /* tags / chips */
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;padding:2px 9px;border-radius:4px;font-weight:600;white-space:nowrap;}
+  .tag-doyeon{background:var(--doyeon-bg);color:var(--doyeon-fg);}
+  .tag-haram{background:var(--haram-bg);color:var(--haram-fg);}
+  .tag-sewon{background:var(--sewon-bg);color:var(--sewon-fg);}
+  .tag-nakyung{background:var(--nakyung-bg);color:var(--nakyung-fg);}
+  .tag-sohyun{background:var(--sohyun-bg);color:var(--sohyun-fg);}
+  .tag-team{background:#EDEBFB;color:#5B4FBF;}
+  .status-chip{display:inline-flex;align-items:center;font-size:12px;padding:2px 8px;border-radius:4px;font-weight:600;}
+  .status-todo{background:var(--status-todo-bg);color:var(--status-todo-fg);}
+  .status-doing{background:var(--status-doing-bg);color:var(--status-doing-fg);}
+  .status-done{background:var(--status-done-bg);color:var(--status-done-fg);}
+
+  /* upcoming list */
+  .upcoming-item{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--border);font-size:14px;}
+  .upcoming-item .left{display:flex;align-items:center;gap:10px;}
+  .upcoming-item .due{font-size:12.5px;color:var(--text-2);}
+
+  /* board */
+  .filter-row{display:flex;align-items:center;gap:10px;margin:12px 0 18px 0;}
+  select.filter-select{border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:13.5px;font-family:inherit;background:#fff;color:var(--text);}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .board-col{background:#FAFAF9;border:1px solid var(--border);border-radius:var(--radius);padding:10px;min-height:120px;}
+  .board-col-head{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 10px 4px;font-size:13.5px;font-weight:700;}
+  .board-count{font-size:12px;color:var(--text-3);font-weight:600;}
+  .card{background:#fff;border:1px solid var(--border);border-radius:5px;padding:10px 11px;margin-bottom:8px;font-size:13.5px;}
+  .card .card-title{font-weight:600;margin-bottom:7px;line-height:1.4;}
+  .card .card-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+  .card .due{font-size:11.5px;color:var(--text-2);}
+
+  /* checklist (member pages) */
+  .task-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border);font-size:14px;}
+  .task-row .ck{width:16px;height:16px;border:1.5px solid #C9C8C5;border-radius:4px;flex:0 0 16px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;}
+  .task-row.done .ck{background:var(--status-done-fg);border-color:var(--status-done-fg);}
+  .task-row.done .task-title{text-decoration:line-through;color:var(--text-3);}
+  .task-title{flex:1;min-width:0;}
+  .task-tag{font-size:11.5px;color:var(--text-3);}
+
+  /* member header */
+  .member-header{display:flex;align-items:center;gap:16px;margin-bottom:22px;}
+  .avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex:0 0 56px;}
+  .member-role{color:var(--text-2);font-size:14px;margin-top:2px;}
+  .member-meta{display:flex;gap:8px;margin-top:8px;}
+
+  .memo-box{min-height:70px;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:14px;line-height:1.7;color:var(--text);background:#fff;}
+  .memo-box:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .memo-hint{font-size:12px;color:var(--text-3);margin-top:6px;}
+
+  /* calendar */
+  .cal-nav{display:flex;align-items:center;gap:14px;margin:10px 0 16px 0;}
+  .cal-nav button{border:1px solid var(--border);background:#fff;border-radius:5px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--text);}
+  .cal-nav button:hover{background:var(--hover);}
+  .cal-label{font-size:17px;font-weight:700;min-width:120px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border);border-left:1px solid var(--border);}
+  .cal-weekday{padding:8px 0;text-align:center;font-size:12px;font-weight:700;color:var(--text-2);background:#FAFAF9;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .cal-cell{min-height:92px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px;cursor:pointer;position:relative;}
+  .cal-cell:hover{background:var(--hover);}
+  .cal-cell.empty{background:#FCFCFB;cursor:default;}
+  .cal-cell.selected{background:var(--accent-bg);}
+  .cal-daynum{font-size:12.5px;color:var(--text-2);font-weight:600;}
+  .cal-cell.today .cal-daynum{color:#fff;background:var(--accent);width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
+  .cal-chip{font-size:10.5px;padding:1px 5px;border-radius:3px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
+  .cal-more{font-size:10.5px;color:var(--text-3);margin-top:2px;}
+  .cal-day-panel{margin-top:20px;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .cal-day-panel h4{margin:0 0 10px 0;font-size:14.5px;}
+
+  @media (max-width: 860px){
+    .sidebar{position:relative;width:100%;flex:none;height:auto;}
+    .content{margin-left:0;}
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .board{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="ws-title"><span class="emoji">🐣</span> 퉤니투 워크스페이스</div>
+
+    <div class="nav-group">
+      <div class="nav-item" data-page="home"><span class="icon">🏠</span>홈</div>
+      <div class="nav-item" data-page="pdr"><span class="icon">📄</span>PDR</div>
+      <div class="nav-item" data-page="calendar"><span class="icon">📅</span>캘린더</div>
+      <div class="nav-item" data-page="board"><span class="icon">✅</span>업무 보드</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">팀원</div>
+      <div class="nav-item member" data-page="m-doyeon"><span class="dot" style="background:var(--doyeon-fg)"></span>김도연</div>
+      <div class="nav-item member" data-page="m-haram"><span class="dot" style="background:var(--haram-fg)"></span>김하람</div>
+      <div class="nav-item member" data-page="m-sewon"><span class="dot" style="background:var(--sewon-fg)"></span>최세원</div>
+      <div class="nav-item member" data-page="m-nakyung"><span class="dot" style="background:var(--nakyung-fg)"></span>이나경</div>
+      <div class="nav-item member" data-page="m-sohyun"><span class="dot" style="background:var(--sohyun-fg)"></span>박소현</div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="content">
+
+    <!-- ---------- HOME ---------- -->
+    <section class="page active" id="page-home">
+      <div class="page-inner">
+        <div class="page-header"><span class="page-icon">🏠</span><h1 class="page-title">홈</h1></div>
+        <p class="page-sub">롯데홈쇼핑 엘라이브 대학대전 · 퉤니투 프로젝트 대시보드</p>
+
+        <div class="stat-row">
+          <div class="stat-card"><div class="stat-num" id="stat-total">-</div><div class="stat-label">전체 업무</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-done">-</div><div class="stat-label">완료</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-doing">-</div><div class="stat-label">진행중</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-todo">-</div><div class="stat-label">해야 할 일</div></div>
+        </div>
+
+        <h2 class="block-title">📌 프로젝트 한눈에 보기</h2>
+        <div class="callout blue">
+          <div class="em">💡</div>
+          <p>MD(상품기획)부터 타겟팅, 경영전략, 실제 라이브 방송까지 이어지는 전 과정을 한 곳에서 관리하기 위한 대시보드입니다. 역할별로 흩어져 있던 업무와 진행상황을 통합해서, 팀 내부는 물론 교수님·벤더사 등 외부 이해관계자와도 진행상황을 빠르게 공유할 수 있도록 만들었습니다.</p>
+        </div>
+
+        <h2 class="block-title">⏰ 다가오는 일정</h2>
+        <div id="upcoming-list"></div>
+
+        <h2 class="block-title">👥 팀원별 진행상황</h2>
+        <table class="ntable">
+          <thead><tr><th>팀원</th><th>전체</th><th>완료</th><th>진행중</th><th>대기</th></tr></thead>
+          <tbody id="member-summary-table"></tbody>
+        </table>
+
+        <p class="memo-hint" style="margin-top:28px;">※ 캘린더·업무 보드에 표시되는 일정과 업무는 대시보드 구조를 보여주기 위한 예시 데이터입니다. 실제 진행상황으로 교체해서 사용해 주세요.</p>
+      </div>
+    </section>
+
+    <!-- ---------- PDR ---------- -->
+    <section class="page" id="page-pdr">
+      <div class="page-inner">
+        <div class="page-header"><span class="page-icon">📄</span><h1 class="page-title">PDR</h1></div>
+        <p class="page-sub">Product Definition Report · 퉤니투</p>
+
+        <h3 class="block-sub">상황, 맥락 설명</h3>
+        <p class="body-text">롯데홈쇼핑 엘라이브 대학대전을 진행하기 위해 MD부터 타겟팅, 경영전략, 실제 방송까지 이어지는 프로젝트를 수행하며, 이를 뒷받침할 대시보드를 만들고자 함.</p>
+
+        <h3 class="block-sub">문제 정의</h3>
+        <div class="callout">
+          <div class="em">⚠️</div>
+          <p>롯데홈쇼핑 프로젝트의 데이터와 업무 과정이 역할별로 분절되어 있어, 구성원들은 데이터를 반복적으로 탐색·전달해야 하고 프로젝트의 전체적인 진행과 의사결정 과정을 공유하기 어렵다. 또한 교수님, 벤더사, 협력사 등 외부 이해관계자에게 업무를 공유하기도 어렵다.</p>
+        </div>
+
+        <h3 class="block-sub">이 대시보드를 사용할 사용자</h3>
+        <p class="body-text">퉤니투 · 벤더사 · 교수님 · (향후) 이 대시보드를 확인할 채용담당자</p>
+
+        <h3 class="block-sub">해결 방안</h3>
+        <p class="body-text">우리가 넣고 싶은 데이터를 매번 찾아야 하는 번거로움, 역할이 나눠져 있어 서로의 진행상황을 파악하기 어려운 점, 다른 역할의 데이터를 받는 번거로움, 벤더사·교수님께 진행상황을 설명하기 어려운 점(낮은 신뢰도)을 하나의 대시보드로 해결한다.</p>
+
+        <h2 class="block-title">📝 메모</h2>
+        <h3 class="block-sub">어떤 문제를 해결하는가</h3>
+        <p class="body-text">넣고 싶은 데이터를 매번 찾아야 하는 번거로움 / 역할이 나뉘어 있어 서로의 진행상황 파악이 어려움 / 다른 역할의 데이터를 받는 번거로움 / 벤더사·교수님께 진행상황을 설명하기 어려움(벤더사의 낮은 신뢰도)</p>
+
+        <h3 class="block-sub">어떤 기능과 경험을 제공하는가</h3>
+        <table class="ntable">
+          <thead><tr><th>기능</th><th>설명</th></tr></thead>
+          <tbody>
+            <tr><td>자동화</td><td>수동으로 해야 할 것을 자동화</td></tr>
+            <tr><td>실시간 공유</td><td>다른 역할의 진행상황을 실시간으로 공유</td></tr>
+            <tr><td>외부 공유</td><td>교수님·벤더사 등 외부 이해관계자에게 잘 공유할 수 있음</td></tr>
+            <tr><td>포트폴리오화</td><td>추후 팀원 개인의 포트폴리오로 활용 가능</td></tr>
+            <tr><td>진행상황 가시화</td><td>전체 프로젝트 진행상황을 한눈에 확인</td></tr>
+            <tr><td>데이터 분석</td><td>개선점 도출을 위한 데이터 분석 (매출액 - 라이브 60분 동안 언제 얼마나 팔렸는지, 이탈률 - 시청자가 언제 이탈했는지 등)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout green" style="margin-top:20px;">
+          <div class="em">🔭</div>
+          <p><b>향후 계획 —</b> 라이브 방송 중 매출액 추이, 시청자 이탈 구간 등 방송 데이터 분석 기능은 실제 방송(11/25, 12/2) 이후 데이터가 쌓이는 대로 이 대시보드에 추가할 예정입니다. 현재 버전은 프로젝트 시작 단계에 맞춰 과제·업무 관리와 일정 공유에 우선 집중했습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CALENDAR ---------- -->
+    <section class="page" id="page-calendar">
+      <div class="page-inner">
+        <div class="page-header"><span class="page-icon">📅</span><h1 class="page-title">캘린더</h1></div>
+        <p class="page-sub">업무 마감일과 방송·회의 일정을 한눈에 확인하세요.</p>
+
+        <div class="cal-nav">
+          <button id="cal-prev">‹</button>
+          <div class="cal-label" id="cal-label"></div>
+          <button id="cal-next">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-day-panel" id="cal-day-panel" style="display:none;">
+          <h4 id="cal-day-title"></h4>
+          <div id="cal-day-tasks"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- BOARD ---------- -->
+    <section class="page" id="page-board">
+      <div class="page-inner">
+        <div class="page-header"><span class="page-icon">✅</span><h1 class="page-title">업무 보드</h1></div>
+        <p class="page-sub">전체 업무를 상태별로 확인하고 담당자로 필터링할 수 있어요.</p>
+
+        <div class="filter-row">
+          <span style="font-size:13.5px;color:var(--text-2);">담당자</span>
+          <select class="filter-select" id="board-filter">
+            <option value="전체">전체</option>
+            <option value="김도연">김도연</option>
+            <option value="김하람">김하람</option>
+            <option value="최세원">최세원</option>
+            <option value="이나경">이나경</option>
+            <option value="박소현">박소현</option>
+            <option value="팀 전체">팀 전체</option>
+          </select>
+        </div>
+
+        <div class="board">
+          <div class="board-col">
+            <div class="board-col-head"><span>🗒 해야 할 일</span><span class="board-count" id="count-todo"></span></div>
+            <div id="col-todo"></div>
+          </div>
+          <div class="board-col">
+            <div class="board-col-head"><span>🚧 진행중</span><span class="board-count" id="count-doing"></span></div>
+            <div id="col-doing"></div>
+          </div>
+          <div class="board-col">
+            <div class="board-col-head"><span>✅ 완료</span><span class="board-count" id="count-done"></span></div>
+            <div id="col-done"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- MEMBER PAGES (template repeated) ---------- -->
+    <section class="page" id="page-m-doyeon">
+      <div class="page-inner">
+        <div class="member-header">
+          <div class="avatar" style="background:var(--doyeon-bg);color:var(--doyeon-fg);">도</div>
+          <div>
+            <div class="page-title" style="font-size:24px;">김도연</div>
+            <div class="member-role" contenteditable="true">담당 파트를 입력하세요 (예: MD·상품기획)</div>
+          </div>
+        </div>
+        <h2 class="block-title">✅ 진행 중인 업무</h2>
+        <div class="member-tasks" data-member="김도연"></div>
+        <h2 class="block-title">🗒 메모</h2>
+        <div class="memo-box" contenteditable="true">이 곳에 회의 내용, 업무 일지, 참고 링크 등을 자유롭게 기록하세요.</div>
+        <p class="memo-hint">이 영역은 브라우저에서 자유롭게 편집할 수 있는 메모 공간입니다.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-m-haram">
+      <div class="page-inner">
+        <div class="member-header">
+          <div class="avatar" style="background:var(--haram-bg);color:var(--haram-fg);">하</div>
+          <div>
+            <div class="page-title" style="font-size:24px;">김하람</div>
+            <div class="member-role" contenteditable="true">담당 파트를 입력하세요 (예: 콘텐츠 제작)</div>
+          </div>
+        </div>
+        <h2 class="block-title">✅ 진행 중인 업무</h2>
+        <div class="member-tasks" data-member="김하람"></div>
+        <h2 class="block-title">🗒 메모</h2>
+        <div class="memo-box" contenteditable="true">이 곳에 회의 내용, 업무 일지, 참고 링크 등을 자유롭게 기록하세요.</div>
+        <p class="memo-hint">이 영역은 브라우저에서 자유롭게 편집할 수 있는 메모 공간입니다.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-m-sewon">
+      <div class="page-inner">
+        <div class="member-header">
+          <div class="avatar" style="background:var(--sewon-bg);color:var(--sewon-fg);">세</div>
+          <div>
+            <div class="page-title" style="font-size:24px;">최세원</div>
+            <div class="member-role" contenteditable="true">담당 파트를 입력하세요 (예: 라이브 운영)</div>
+          </div>
+        </div>
+        <h2 class="block-title">✅ 진행 중인 업무</h2>
+        <div class="member-tasks" data-member="최세원"></div>
+        <h2 class="block-title">🗒 메모</h2>
+        <div class="memo-box" contenteditable="true">이 곳에 회의 내용, 업무 일지, 참고 링크 등을 자유롭게 기록하세요.</div>
+        <p class="memo-hint">이 영역은 브라우저에서 자유롭게 편집할 수 있는 메모 공간입니다.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-m-nakyung">
+      <div class="page-inner">
+        <div class="member-header">
+          <div class="avatar" style="background:var(--nakyung-bg);color:var(--nakyung-fg);">나</div>
+          <div>
+            <div class="page-title" style="font-size:24px;">이나경</div>
+            <div class="member-role" contenteditable="true">담당 파트를 입력하세요 (예: 마케팅·전략)</div>
+          </div>
+        </div>
+        <h2 class="block-title">✅ 진행 중인 업무</h2>
+        <div class="member-tasks" data-member="이나경"></div>
+        <h2 class="block-title">🗒 메모</h2>
+        <div class="memo-box" contenteditable="true">이 곳에 회의 내용, 업무 일지, 참고 링크 등을 자유롭게 기록하세요.</div>
+        <p class="memo-hint">이 영역은 브라우저에서 자유롭게 편집할 수 있는 메모 공간입니다.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-m-sohyun">
+      <div class="page-inner">
+        <div class="member-header">
+          <div class="avatar" style="background:var(--sohyun-bg);color:var(--sohyun-fg);">소</div>
+          <div>
+            <div class="page-title" style="font-size:24px;">박소현</div>
+            <div class="member-role" contenteditable="true">담당 파트를 입력하세요 (예: 데이터 분석)</div>
+          </div>
+        </div>
+        <h2 class="block-title">✅ 진행 중인 업무</h2>
+        <div class="member-tasks" data-member="박소현"></div>
+        <h2 class="block-title">🗒 메모</h2>
+        <div class="memo-box" contenteditable="true">이 곳에 회의 내용, 업무 일지, 참고 링크 등을 자유롭게 기록하세요.</div>
+        <p class="memo-hint">이 영역은 브라우저에서 자유롭게 편집할 수 있는 메모 공간입니다.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const TAG_CLASS = {
+  '김도연':'tag-doyeon','김하람':'tag-haram','최세원':'tag-sewon',
+  '이나경':'tag-nakyung','박소현':'tag-sohyun','팀 전체':'tag-team'
+};
+
+const tasks = [
+  {id:1,  title:'브랜드/상품 카테고리 리서치',        assignee:'김도연',  cat:'기획',    due:'2026-09-08', status:'done'},
+  {id:2,  title:'타겟 고객 페르소나 정리',            assignee:'박소현',  cat:'기획',    due:'2026-09-12', status:'done'},
+  {id:3,  title:'경쟁 라이브커머스 벤치마킹',          assignee:'최세원',  cat:'기획',    due:'2026-09-15', status:'doing'},
+  {id:4,  title:'상품 소싱 후보 리스트업',            assignee:'이나경',  cat:'소싱',    due:'2026-09-18', status:'doing'},
+  {id:5,  title:'번들링 구성안 초안',                assignee:'김하람',  cat:'소싱',    due:'2026-09-22', status:'todo'},
+  {id:6,  title:'1차 팀 회의: 방향성 확정',           assignee:'팀 전체', cat:'회의',    due:'2026-09-09', status:'done'},
+  {id:7,  title:'SNS 채널 컨셉 기획',               assignee:'김도연',  cat:'마케팅',  due:'2026-09-25', status:'todo'},
+  {id:8,  title:'타겟팅 전략 보고서 작성',            assignee:'박소현',  cat:'과제',    due:'2026-09-29', status:'todo'},
+  {id:9,  title:'상품 공급사 컨택',                  assignee:'최세원',  cat:'소싱',    due:'2026-10-02', status:'todo'},
+  {id:10, title:'번들 구성 최종안 정리',              assignee:'이나경',  cat:'소싱',    due:'2026-10-06', status:'todo'},
+  {id:11, title:'콘텐츠 촬영 컨셉 기획',              assignee:'김하람',  cat:'콘텐츠',  due:'2026-10-09', status:'todo'},
+  {id:12, title:'중간 발표 준비',                    assignee:'팀 전체', cat:'과제',    due:'2026-10-13', status:'todo'},
+  {id:13, title:'인스타그램 콘텐츠 제작',             assignee:'김도연',  cat:'콘텐츠',  due:'2026-10-16', status:'todo'},
+  {id:14, title:'교수님 중간 피드백 미팅',            assignee:'박소현',  cat:'회의',    due:'2026-10-20', status:'todo'},
+  {id:15, title:'라이브 방송 대본 초안',              assignee:'최세원',  cat:'라이브운영', due:'2026-10-23', status:'todo'},
+  {id:16, title:'가격/프로모션 전략 수립',            assignee:'이나경',  cat:'마케팅',  due:'2026-10-27', status:'todo'},
+  {id:17, title:'숏폼 콘텐츠 편집',                  assignee:'김하람',  cat:'콘텐츠',  due:'2026-10-30', status:'todo'},
+  {id:18, title:'"AI 기반 경영전략 실습" 최종 보고서 제출', assignee:'팀 전체', cat:'과제', due:'2026-11-18', status:'todo'},
+  {id:19, title:'라이브 방송 큐시트 작성',            assignee:'김도연',  cat:'라이브운영', due:'2026-11-20', status:'todo'},
+  {id:20, title:'벤더사 최종 컨펌 미팅',              assignee:'박소현',  cat:'회의',    due:'2026-11-21', status:'todo'},
+  {id:21, title:'1차 라이브 방송 (엘라이브)',          assignee:'팀 전체', cat:'라이브운영', due:'2026-11-25', status:'todo'},
+  {id:22, title:'1차 방송 결과 분석',                assignee:'최세원',  cat:'데이터분석', due:'2026-11-27', status:'todo'},
+  {id:23, title:'2차 방송 상품 구성 보완',            assignee:'이나경',  cat:'소싱',    due:'2026-11-29', status:'todo'},
+  {id:24, title:'2차 라이브 방송 (엘라이브)',          assignee:'팀 전체', cat:'라이브운영', due:'2026-12-02', status:'todo'},
+  {id:25, title:'2차 방송 결과 분석',                assignee:'김하람',  cat:'데이터분석', due:'2026-12-04', status:'todo'},
+  {id:26, title:'"P-실무프로젝트" 최종 보고서 제출',    assignee:'팀 전체', cat:'과제',    due:'2026-12-16', status:'todo'},
+];
+
+const STATUS_LABEL = {todo:'해야 할 일', doing:'진행중', done:'완료'};
+const MEMBERS = ['김도연','김하람','최세원','이나경','박소현'];
+
+/* ================= NAV ================= */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('page-'+item.dataset.page).classList.add('active');
+  });
+});
+document.querySelector('.nav-item[data-page="home"]').classList.add('active');
+
+/* ================= HELPERS ================= */
+function fmtDate(iso){
+  const d = new Date(iso+'T00:00:00');
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+function tagChip(name){
+  const cls = TAG_CLASS[name] || 'tag-team';
+  return `<span class="chip ${cls}">${name}</span>`;
+}
+function statusChip(status){
+  return `<span class="status-chip status-${status}">${STATUS_LABEL[status]}</span>`;
+}
+
+/* ================= HOME ================= */
+function renderHome(){
+  const total = tasks.length;
+  const done = tasks.filter(t=>t.status==='done').length;
+  const doing = tasks.filter(t=>t.status==='doing').length;
+  const todo = tasks.filter(t=>t.status==='todo').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-doing').textContent = doing;
+  document.getElementById('stat-todo').textContent = todo;
+
+  const upcoming = tasks
+    .filter(t=>t.status!=='done')
+    .sort((a,b)=>a.due.localeCompare(b.due))
+    .slice(0,6);
+  document.getElementById('upcoming-list').innerHTML = upcoming.map(t=>`
+    <div class="upcoming-item">
+      <div class="left">${tagChip(t.assignee)}<span>${t.title}</span></div>
+      <div class="due">${fmtDate(t.due)}</div>
+    </div>
+  `).join('');
+
+  const rows = MEMBERS.map(m=>{
+    const mt = tasks.filter(t=>t.assignee===m);
+    const d = mt.filter(t=>t.status==='done').length;
+    const dg = mt.filter(t=>t.status==='doing').length;
+    const td = mt.filter(t=>t.status==='todo').length;
+    return `<tr><td>${tagChip(m)}</td><td>${mt.length}</td><td>${d}</td><td>${dg}</td><td>${td}</td></tr>`;
+  }).join('');
+  document.getElementById('member-summary-table').innerHTML = rows;
+}
+
+/* ================= MEMBER PAGES ================= */
+function renderMemberTasks(){
+  document.querySelectorAll('.member-tasks').forEach(container=>{
+    const name = container.dataset.member;
+    const mt = tasks.filter(t=>t.assignee===name).sort((a,b)=>a.due.localeCompare(b.due));
+    if(mt.length===0){
+      container.innerHTML = `<p class="body-text" style="color:var(--text-3);">아직 등록된 업무가 없습니다.</p>`;
+      return;
+    }
+    container.innerHTML = mt.map(t=>`
+      <div class="task-row ${t.status==='done'?'done':''}">
+        <span class="ck">${t.status==='done'?'✓':''}</span>
+        <span class="task-title">${t.title}</span>
+        <span class="task-tag">${t.cat}</span>
+        ${statusChip(t.status)}
+        <span class="due">${fmtDate(t.due)}</span>
+      </div>
+    `).join('');
+  });
+}
+
+/* ================= BOARD ================= */
+function renderBoard(filter){
+  filter = filter || '전체';
+  const filtered = filter==='전체' ? tasks : tasks.filter(t=>t.assignee===filter);
+  const cols = {todo:[], doing:[], done:[]};
+  filtered.forEach(t=>cols[t.status].push(t));
+
+  ['todo','doing','done'].forEach(s=>{
+    const list = cols[s].sort((a,b)=>a.due.localeCompare(b.due));
+    document.getElementById('count-'+s).textContent = list.length;
+    document.getElementById('col-'+s).innerHTML = list.map(t=>`
+      <div class="card">
+        <div class="card-title">${t.title}</div>
+        <div class="card-meta">
+          ${tagChip(t.assignee)}
+          <span class="due">${fmtDate(t.due)} · ${t.cat}</span>
+        </div>
+      </div>
+    `).join('') || `<p style="font-size:12.5px;color:var(--text-3);padding:6px 2px;">업무 없음</p>`;
+  });
+}
+document.getElementById('board-filter').addEventListener('change', e=>renderBoard(e.target.value));
+
+/* ================= CALENDAR ================= */
+const today = new Date();
+let calYear = today.getFullYear();
+let calMonth = today.getMonth(); // 0-indexed
+
+const tasksByDate = {};
+tasks.forEach(t=>{
+  (tasksByDate[t.due] = tasksByDate[t.due] || []).push(t);
+});
+
+function isoDate(y,m,d){
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function renderCalendar(){
+  document.getElementById('cal-label').textContent = `${calYear}년 ${calMonth+1}월`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  ['일','월','화','수','목','금','토'].forEach(w=>{
+    const el = document.createElement('div');
+    el.className = 'cal-weekday';
+    el.textContent = w;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const numDays = new Date(calYear, calMonth+1, 0).getDate();
+
+  for(let i=0;i<firstDay;i++){
+    const el = document.createElement('div');
+    el.className = 'cal-cell empty';
+    grid.appendChild(el);
+  }
+
+  for(let d=1; d<=numDays; d++){
+    const iso = isoDate(calYear, calMonth, d);
+    const dayTasks = tasksByDate[iso] || [];
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    const isToday = iso === isoDate(today.getFullYear(), today.getMonth(), today.getDate());
+    if(isToday) cell.classList.add('today');
+
+    let chipsHtml = '';
+    dayTasks.slice(0,2).forEach(t=>{
+      const cls = TAG_CLASS[t.assignee] || 'tag-team';
+      chipsHtml += `<div class="cal-chip chip ${cls}">${t.title}</div>`;
+    });
+    if(dayTasks.length>2){
+      chipsHtml += `<div class="cal-more">+${dayTasks.length-2}개 더보기</div>`;
+    }
+
+    cell.innerHTML = `<div class="cal-daynum">${d}</div>${chipsHtml}`;
+    cell.addEventListener('click', ()=>showDayTasks(iso, cell));
+    grid.appendChild(cell);
+  }
+}
+
+function showDayTasks(iso, cellEl){
+  document.querySelectorAll('.cal-cell').forEach(c=>c.classList.remove('selected'));
+  cellEl.classList.add('selected');
+  const dayTasks = tasksByDate[iso] || [];
+  const panel = document.getElementById('cal-day-panel');
+  const d = new Date(iso+'T00:00:00');
+  document.getElementById('cal-day-title').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 업무`;
+  if(dayTasks.length===0){
+    document.getElementById('cal-day-tasks').innerHTML = `<p style="font-size:13.5px;color:var(--text-3);margin:0;">해당 날짜에 등록된 업무가 없습니다.</p>`;
+  }else{
+    document.getElementById('cal-day-tasks').innerHTML = dayTasks.map(t=>`
+      <div class="upcoming-item">
+        <div class="left">${tagChip(t.assignee)}<span>${t.title}</span></div>
+        ${statusChip(t.status)}
+      </div>
+    `).join('');
+  }
+  panel.style.display = 'block';
+}
+
+document.getElementById('cal-prev').addEventListener('click', ()=>{
+  calMonth--; if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+  document.getElementById('cal-day-panel').style.display='none';
+});
+document.getElementById('cal-next').addEventListener('click', ()=>{
+  calMonth++; if(calMonth>11){calMonth=0;calYear++;}
+  renderCalendar();
+  document.getElementById('cal-day-panel').style.display='none';
+});
+
+/* ================= INIT ================= */
+renderHome();
+renderMemberTasks();
+renderBoard('전체');
+renderCalendar();
+</script>
+</body>
+</html>
